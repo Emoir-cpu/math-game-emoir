@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Geometri Laboratuvarı v4</title>
+    <style>
+        :root { 
+            --wood: #451a03; 
+            --chalk: #fefce8; 
+            --green: #166534; 
+            --dark-green: #0a401c;
+        } 
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            overflow: hidden; 
+        } 
+        #game-canvas { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            background-image: url('emoir.png'); 
+            background-size: cover; 
+            background-position: center; 
+        } 
+        .warning-sign { 
+            position: absolute; 
+            font-size: 38px; 
+            cursor: pointer; 
+            animation: alert-blink 0.7s infinite; 
+            z-index: 10; 
+        } 
+        @keyframes alert-blink { 
+            0% { opacity: 0.3; transform: scale(0.9); } 
+            50% { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 10px red); } 
+            100% { opacity: 0.3; transform: scale(0.9); } 
+        } 
+        
+        /* GÜNCEL UYARI İŞARETİ KOORDİNATLARI (İnce ayar yapıldı) */
+        
+        /* 1. TELESKOP */
+        #fix-clock { top: 50%; left: 15%; } 
+        
+        /* 2. KRONOMETRE / POSTER ALTI (Kosinüs Teoremi) */
+        #fix-microscope { top: 55%; left: 47%; } 
+        
+        /* 3. KARA TAHTA ORTASI (Açıortay Teoremi) */
+        #fix-tubes { top: 40%; left: 63%; } 
+        
+        /* 4. ERLENMAYER STANDI (Ağırlık Merkezi) */
+        #fix-skeleton { top: 50%; left: 69%; } 
+        
+        /* 5. DENEY TÜPLERİ (Raf, Sinüslü Alan) */
+        #fix-globe { top: 35%; left: 87%; } 
+        
+        /* 6. MİKROSKOP (Trigonometrik Özdeşlik) */
+        #fix-books { top: 68%; left: 86%; } 
+        
+        /* 7. KUTU ÜZERİ (Üçgende Alan) */
+        #fix-box { top: 80%; left: 30%; }
+
+        /* ORTAK KUTU STİLİ */
+        .info-box {
+            background: var(--dark-green);
+            border: 10px solid var(--wood);
+            border-radius: 15px;
+            color: var(--chalk);
+            padding: 40px 30px;
+            width: 80%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* BAŞLANGIÇ EKRANI STİLLERİ */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* BİTİŞ EKRANI STİLLERİ */
+        #win-screen {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 2500;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* POPUP VE BUTON STİLLERİ */
+        #overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0,0,0,0.95); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+        } 
+        .chalkboard { 
+            background: var(--green); 
+            width: 95%; 
+            height: 90%; 
+            border: 12px solid var(--wood); 
+            border-radius: 10px; 
+            text-align: center; 
+            color: var(--chalk); 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-sizing: border-box; 
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.6); 
+        } 
+        .svg-container { 
+            background: rgba(255,255,255,0.05); 
+            padding: 10px; 
+            border-radius: 8px; 
+            margin: 5px 0; 
+        } 
+        input { 
+            background: transparent; 
+            border: none; 
+            border-bottom: 2px solid var(--chalk); 
+            color: var(--chalk); 
+            font-size: 1.5rem; 
+            text-align: center; 
+            width: 80%; 
+            outline: none; 
+        } 
+        .btn { 
+            background: var(--chalk); 
+            color: var(--green); 
+            border: none; 
+            padding: 12px 25px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 5px; 
+        } 
+    </style>
+</head>
+<body> 
+    
+    <div id="splash-screen">
+        <div class="info-box">
+            <h1>🧪 Geometri Laboratuvarı Bakım Oyunu 📐</h1>
+            <p>
+                Uyarı işaretleri (`⚠️`) bulunan 7 farklı ekipman arızalanmıştır. Her bir işarete tıklayarak karşına çıkan geometri sorusunu doğru çözmeli ve laboratuvarı tamir etmelisin!
+            </p>
+            <p style="font-size: 0.9rem; margin: 0;">
+                **Hazırlayan:** Emir Pamukcu 607
+            </p>
+            <button class="btn" style="margin-top: 20px;" onclick="startGame()">LABORATUVARA GİRİŞ YAP</button>
+        </div>
+    </div>
+    <div id="win-screen">
+        <div class="info-box">
+            <h1>🎉 TEBRİKLER! LABORATUVAR TAMİR EDİLDİ! 🎉</h1>
+            <p style="font-size: 1.3rem;">
+                Tüm geometrik hataları başarıyla giderdiniz ve laboratuvarı kurtardınız. Başarın için teşekkürler!
+            </p>
+            <p style="font-size: 0.9rem; margin: 0;">
+                Hazırlayan: Emir Pamukcu 607
+            </p>
+        </div>
+    </div>
+    <div id="game-canvas"> 
+        <div class="warning-sign" id="fix-clock" onclick="openPanel('muhtesem')">⚠️</div> 
+        <div class="warning-sign" id="fix-microscope" onclick="openPanel('kosinus')">⚠️</div> 
+        <div class="warning-sign" id="fix-tubes" onclick="openPanel('aciortay')">⚠️</div> 
+        <div class="warning-sign" id="fix-skeleton" onclick="openPanel('agirlik')">⚠️</div> 
+        <div class="warning-sign" id="fix-globe" onclick="openPanel('sinusAlan')">⚠️</div> 
+        <div class="warning-sign" id="fix-books" onclick="openPanel('trigOzdes')">⚠️</div> 
+        <div class="warning-sign" id="fix-box" onclick="openPanel('ucgendeAlan')">⚠️</div> 
+        
+        <div id="overlay"> 
+            <div class="chalkboard"> 
+                <h2 id="q-title" style="margin:0;">GEOMETRİK BAKIM</h2> 
+                <div id="q-svg" class="svg-container"></div> 
+                <p id="q-text" style="font-size: 1.1rem; margin:5px 0;"></p> 
+                <input type="text" id="ans-input" autocomplete="off" placeholder="Cevap..."> 
+                <div> 
+                    <button class="btn" onclick="checkAnswer()">TAMİR ET</button> 
+                    <button class="btn" style="background:#555; color:white; margin-left:10px;" onclick="closePanel()">VAZGEÇ</button> 
+                </div> 
+                <p id="msg" style="margin-top:5px; font-weight:bold;"></p> 
+            </div> 
+        </div> 
+    </div> 
+    
+    <script> 
+        let solvedCount = 0;
+        const totalProblems = 7;
+        
+        const data = { 
+            muhtesem: { 
+                t: "MUHTEŞEM ÜÇLÜ HATASI", 
+                q: "BAC dik üçgeninde AD kenarortaydır. |BD|=6 ise |AD|=x kaçtır?", 
+                a: "6", 
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130"> <path d="M30,100 L190,100 L30,20 Z" fill="none" stroke="white" stroke-width="2"/> <line x1="30" y1="100" x2="110" y2="60" stroke="#fbbf24" stroke-width="2"/> <text x="20" y="115" fill="white" font-size="14">A</text> <text x="20" y="20" fill="white" font-size="14">B</text> <text x="195" y="115" fill="white" font-size="14">C</text> <text x="110" y="55" fill="#fbbf24" font-size="14">D</text> <text x="55" y="70" fill="#fbbf24">x</text><text x="110" y="115" fill="white">6</text> </svg>` 
+            }, 
+            kosinus: { 
+                t: "KOSİNÜS TEOREMİ HATASI", 
+                q: "ABC üçgeninde m(A)=α kaçtır? (7-8-13 kuralı)", 
+                a: "120", 
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130"> <path d="M110,30 L30,100 L190,100 Z" fill="none" stroke="white" stroke-width="2"/> <text x="105" y="25" fill="white" font-size="14">A</text> <text x="20" y="115" fill="white" font-size="14">B</text> <text x="190" y="115" fill="white" font-size="14">C</text> <text x="60" y="65" fill="white">7</text><text x="150" y="65" fill="white">8</text><text x="105" y="115" fill="white">13</text> </svg>` 
+            }, 
+            aciortay: { 
+                t: "AÇIORTAY TEOREMİ SIZINTISI", 
+                q: "AD açıortaydır. |AB|=9, |AC|=12, |BC|=14 ise |BD|=x kaçtır?", 
+                a: "6", 
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130"> <path d="M110,20 L40,100 L170,100 Z" fill="none" stroke="white" stroke-width="2"/> <line x1="110" y1="20" x2="95" y2="100" stroke="#fbbf24" stroke-width="2"/> <text x="105" y="15" fill="white" font-size="14">A</text> <text x="30" y="115" fill="white" font-size="14">B</text> <text x="170" y="115" fill="white" font-size="14">C</text> <text x="90" y="115" fill="#fbbf24" font-size="14">D</text> <text x="60" y="70" fill="white">9</text><text x="145" y="70" fill="white">12</text><text x="65" y="115" fill="#fbbf24">x</text> </svg>` 
+            }, 
+            agirlik: { 
+                t: "AĞIRLIK MERKEZİ HATASI", 
+                q: "ABC üçgeninde G ağırlık merkezidir. |AG|=10 ise |GD|=x kaçtır?", 
+                a: "5", 
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130"> <path d="M110,20 L30,110 L190,110 Z" fill="none" stroke="white" stroke-width="2"/> <line x1="110" y1="20" x2="110" y2="110" stroke="white" stroke-dasharray="4"/> <text x="105" y="15" fill="white" font-size="14">A</text> <text x="20" y="125" fill="white" font-size="14">B</text> <text x="190" y="125" fill="white" font-size="14">C</text> <text x="110" y="125" fill="white" font-size="14">D</text> <circle cx="110" cy="80" r="3" fill="#fbbf24"/> <text x="118" y="80" fill="#fbbf24">G</text> <text x="112" y="50" fill="white">10</text><text x="112" y="100" fill="#fbbf24">x</text> </svg>` 
+            }, 
+            sinusAlan: { 
+                t: "SİNÜSLÜ ALAN HATASI", 
+                q: "ABC üçgeninde |AB|=10, |AC|=8 ve m(A)=150° ise Alan(ABC) kaçtır?", 
+                a: "20", 
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130"> <path d="M40,110 L180,110 L120,40 Z" fill="none" stroke="white" stroke-width="2"/> <text x="115" y="35" fill="white" font-size="14">A</text> <text x="30" y="125" fill="white" font-size="14">B</text> <text x="180" y="125" fill="white" font-size="14">C</text> <text x="70" y="70" fill="white">10</text><text x="160" y="70" fill="white">8</text> <text x="105" y="100" fill="#fbbf24">150°</text> </svg>` 
+            }, 
+            trigOzdes: { 
+                t: "ÖZDEŞLİK VERİ KAYBI", 
+                q: "Sadeleştirin: (sin²x + cos²x) / tanx ifadesinin eşiti nedir?", 
+                a: "cotx", 
+                svg: `<svg width="220" height="100" viewBox="0 0 220 100"> <text x="110" y="40" fill="white" font-size="18" text-anchor="middle">sin²x + cos²x</text> <line x1="50" y1="50" x2="170" y2="50" stroke="white" stroke-width="2"/> <text x="110" y="80" fill="white" font-size="18" text-anchor="middle">tanx</text> </svg>` 
+            },
+            ucgendeAlan: {
+                t: "ÜÇGENDE ALAN HESABI HATASI",
+                q: "ABC üçgeninde BC kenarı **10 cm**, bu kenara ait yükseklik (**h**) **8 cm** ise Alan(ABC) kaçtır?",
+                a: "40",
+                svg: `<svg width="220" height="130" viewBox="0 0 220 130">
+                    <path d="M40,110 L180,110 L110,30 Z" fill="none" stroke="white" stroke-width="2"/>
+                    <line x1="110" y1="30" x2="110" y2="110" stroke="#fbbf24" stroke-dasharray="4"/>
+                    <text x="105" y="25" fill="white" font-size="14">A</text>
+                    <text x="30" y="125" fill="white" font-size="14">B</text>
+                    <text x="185" y="125" fill="white" font-size="14">C</text>
+                    <text x="115" y="70" fill="#fbbf24">h=8</text>
+                    <text x="105" y="125" fill="white">10</text>
+                </svg>`
+            }
+        }; 
+        let current = null; 
+
+        function startGame() {
+            document.getElementById('splash-screen').style.display = 'none';
+        }
+        
+        function showWinScreen() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('win-screen').style.display = 'flex';
+        }
+
+        function openPanel(key) { 
+            current = key; 
+            document.getElementById('q-title').innerText = data[key].t; 
+            document.getElementById('q-text').innerText = data[key].q; 
+            document.getElementById('q-svg').innerHTML = data[key].svg; 
+            document.getElementById('overlay').style.display = 'flex'; 
+            document.getElementById('ans-input').value = ""; 
+            document.getElementById('msg').innerText = ""; 
+            document.getElementById('ans-input').focus(); 
+        } 
+        function checkAnswer() { 
+            const val = document.getElementById('ans-input').value.trim().toLowerCase(); 
+            const msg = document.getElementById('msg'); 
+            if(val === data[current].a) { 
+                msg.innerText = "SİSTEM ONARILDI!"; 
+                msg.style.color = "#4ade80"; 
+                const mapId = {muhtesem:'fix-clock', kosinus:'fix-microscope', aciortay:'fix-tubes', agirlik:'fix-skeleton', sinusAlan:'fix-globe', trigOzdes:'fix-books', ucgendeAlan:'fix-box'}; 
+                document.getElementById(mapId[current]).style.display = 'none'; 
+                
+                solvedCount++;
+                
+                if (solvedCount === totalProblems) {
+                    setTimeout(showWinScreen, 1200); 
+                } else {
+                    setTimeout(closePanel, 1200); 
+                }
+
+            } else { 
+                msg.innerText = "HATALI PARAMETRE!"; 
+                msg.style.color = "#ef4444"; 
+            } 
+        } 
+        function closePanel() { 
+            document.getElementById('overlay').style.display = 'none'; 
+        } 
+    </script> 
+</body>
+</html>
